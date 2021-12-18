@@ -30,7 +30,7 @@ var choice_begin_button = [
 ]
 
 var choice_days_button = [
-    ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'], ['Вся неделя']
+    ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'], ['Вся неделя'], ['Вернуться']
 ]
 
 var arr_days_assoc = {
@@ -110,9 +110,9 @@ bot.on('text', msg => {
                     reply_markup: {
                         keyboard: choice_days_button
                     }
-                }).then(()=>{
+                }).then(() => {
                     step = 'timetable_day'
-                }).catch((err)=>console.log(err));
+                }).catch((err) => console.log(err));
 
             } else if (text == 'Выход') {
                 bot.sendMessage(chat_id, `Вы вышли`)
@@ -129,18 +129,43 @@ bot.on('text', msg => {
         case 'timetable_day':
             let tableString = fs.readFileSync(path.join(__dirname, 'timetable.json'));
             let table = JSON.parse(tableString);
-            
-            console.log(table[arr_days_assoc[text]])
 
-            let lessons_data = table[arr_days_assoc[text]].lessons;
-            let str = '';
+            if (arr_days_assoc.hasOwnProperty(text)) {
+                let lessons_data = table[arr_days_assoc[text]].lessons;
+                let str = '';
 
-            for(let i = 0; i < lessons_data.length; i++){
-                str += "- Пара " + (i+1) + " - " + lessons_data[i].item + "\n";
+                for (let i = 0; i < lessons_data.length; i++) {
+                    str += (i + 1) + " Пара " + " - " + lessons_data[i].item + ";" + "\n" +
+                        "Время" + " " + lessons_data[i].time + "\n" +
+                        "№ Кабинета " + lessons_data[i].room + "\n" +
+                        "Преподаватель" + " " + lessons_data[i].prepod + "\n" + "\n";
+                }
+
+                bot.sendMessage(chat_id, "Ваше расписание: \n" + str);
+            } else if ( text == 'Вся неделя' ) {
+                let str = ''; 
+
+                for(let i = 0; i < choice_days_button[0].length; i++){
+
+                    str += choice_days_button[0][i] + "\n\n";
+
+                    for (let y = 0; y < table[arr_days_assoc[choice_days_button[0][i]]].lessons.length; y++){
+                        str += (y + 1) + " Пара " + " - " + table[arr_days_assoc[choice_days_button[0][i]]].lessons[y].item + ";" + "\n" +
+                        "Время" + " " + table[arr_days_assoc[choice_days_button[0][i]]].lessons[y].time + "\n" +
+                        "№ Кабинета " + table[arr_days_assoc[choice_days_button[0][i]]].lessons[y].room + "\n" +
+                        "Преподаватель" + " " + table[arr_days_assoc[choice_days_button[0][i]]].lessons[y].prepod + "\n" + "\n";
+                    }
+                    
+                }
+
+                bot.sendMessage(chat_id, "Ваше расписание: \n" + str);
+            } else if ( text == 'Вернуться' ) {
+                bot.sendMessage(chat_id, `Введите номер зачётки!`, {
+                    reply_markup:{remove_keyboard: true}
+                })
+                    .then(()=>step="zachetka")
             }
 
-
-            bot.sendMessage(chat_id, "Ваше расписание: \n" + str);
             break;
     }
 
